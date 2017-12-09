@@ -5,7 +5,7 @@ from timeit import default_timer as timer
 ### F = G m1*m2/d^2
 start = timer()
 n_bodies = 6  #bodies
-dim = 2  # (x,y) GLOBAL
+dim = 3  # (x,y) GLOBAL
 G = 6.674 * 10**-11
 
 pos_array= np.zeros([n_bodies,dim]) # position relative in meters, x,y to arbitrary origin for each of n bodies
@@ -20,7 +20,7 @@ def distances(obj_index, positions):
     n = len(positions)
     out = np.zeros([n])
     for index, each in enumerate(positions):
-        out[index] = np.linalg.norm(positions[obj_index]-each)
+        out[index] = np.linalg.norm(positions[obj_index]-each)   #### de for loop with axis = 1 option
         #  print(out)
     return(out)
 
@@ -32,24 +32,50 @@ def forces(obj_index, positions, masses):
     force_list[obj_index]=0  # removes division by 0 caused by 0-dist to self in above line
     return force_list
 
-def force_vectors(obj_index, positions, force_mags):
-    """returns net x/y/z components of force for an object as a 3-unit vector"""
+def unit_vectors(obj_index, positions):
+    """returns unit vector for obj to each other object"""
+    un_normed = positions - positions[obj_index]
+    norming = np.sum(un_normed, axis=1) ** -1
+    normed = norming * np.transpose(un_normed)
+    normed = normed.transpose()
+    return normed
+
+def net_force_vector(obj_index, positions, masses):
+    """computes x,y,z force vector, in Newtons, for given object index"""
+    unit_vector = unit_vectors(obj_index, positions)
+    force_mags = forces(obj_index, positions, masses)
+    force_mags = force_mags * unit_vector.transpose()
+    force_mags = force_mags.transpose()
+    force_mags = force_mags[(force_mags == force_mags).all(1)]
+    force_mags = np.sum(force_mags, axis = 1)
+
+    return force_mags
+
     # relative position array (pos array - pos[index]
-    # solve geometry, x/y y/z z/x (etc.) * force to return obj by 3(dim) vectorized force 
+    # solve geometry, x/y y/z z/x (etc.) * force to return obj by 3(dim) vectorized force
+
+
+
 
 
 
     #  print(force_list)
 ### Testing ###
 pos_array[2,1]=1.876
-pos_array[0,1]=5.867546546
-pos_array[0,0]=4.3
+pos_array[0,2]=5.867546546
+pos_array[4,0]=4.3
+
+net_force_vector(1,pos_array, mass_array)
 
 
-for i in range(1):
-    force_output = forces(i, pos_array, mass_array)
-    print(force_output)
 
+
+
+# for i in range(4):
+#     force_output = forces(i, pos_array, mass_array)
+#     print(force_output)
+
+#print(unit_vectors(0,pos_array))
 
 # def forces_all(obj_array,)
 
