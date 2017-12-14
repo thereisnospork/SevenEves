@@ -1,22 +1,8 @@
 import numpy as np
 from timeit import default_timer as timer
 
-####numerical solver 3 body ###
-### F = G m1*m2/d^2
-start = timer()
-n_bodies = 30  #bodies
-dim = 3  # (x,y) GLOBAL
+###global gravity constant###
 G = 6.674 * 10**-11
-
-# pos_array= np.zeros([n_bodies,dim], dtype=np.float64) # position relative in meters, x,y,z to arbitrary origin for each of n bodies
-velocities = np.zeros([n_bodies,dim], dtype=np.float32)  # m/s x,y for each of n bodies
-# mass_array = np.ones([n_bodies], dtype=np.float32)  # masses for each of n bodies, in kg
-#force_array = np.zeros([n_bodies,dim], dtype=np.float64)  # net forces in x,y for each of n bodies  ##extraneous
-
-###initialize with psuedo random values ##need to research approx astronomical distributions, suns, planets, etc.
-pos_array   =   np.random.normal(100,10,[n_bodies,dim])             #, dtype=np.float64) # position relative in meters, x,y,z to arbitrary origin for each of n bodies
-# velocities  =   np.random.normal(100,10,[n_bodies,dim])             #, dtype=np.float64)  # m/s x,y for each of n bodies
-mass_array  =   100* np.random.normal(100,10,[n_bodies])        #, dtype=np.float32)  # masses for each of n bodies, in kg
 
 
 ########FUNCTIONS##########
@@ -71,17 +57,18 @@ def discrete_simulation(velocities, positions, masses, time_slice = 0.1, time_ma
         [velocities, positions] = delta_VP(velocities,positions,masses,time_slice)
     return [velocities, positions]
 
-def continuous(velocities, positions, masses, interval, steps, time_slice = 0.1):
+def continuous(velocities, positions, masses, interval, steps, serial = 0, time_slice = 0.1):
     """Calls discrete simulation n = steps of time interval length with time_slice resolution.
     Stores and outputs a csv V/P arrays hstackd indexed by step #"""
     for step in range(steps):
         [velocities, positions] = discrete_simulation(velocities, positions, masses, time_slice, interval)
-        save_state([velocities, positions],step*interval)
 
-def save_state(V_P, time):
-    combined = np.hstack(V_P)
-    file_name = str('data\\' + str(time) +' delete_me.csv')
-    np.savetxt( file_name, combined, delimiter=',')
+        save_state([masses, velocities, positions],step*interval, serial = serial)
+
+def save_state(M_V_P, time, serial = 0):
+    combined = np.hstack(M_V_P)
+    file_name = str('data\\system_'+str(serial) +'\\time_' + str(time) +'.csv')
+    np.savetxt(file_name, combined, delimiter=',', header = str(time))
 
 
 
@@ -95,14 +82,6 @@ def save_state(V_P, time):
 # a = distances(0,pos_array)
 # print(a)
 
-
-c = continuous(velocities, pos_array, mass_array,10,100,time_slice=0.1)
-
-end = timer()
-
-print(end - start)
-
-print(c)
 
 #####Need data storage, need plotting
 ##### need to simulate known system, eg earth around sun, moon around earth.
