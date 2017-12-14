@@ -4,7 +4,7 @@ from timeit import default_timer as timer
 ####numerical solver 3 body ###
 ### F = G m1*m2/d^2
 start = timer()
-n_bodies = 60  #bodies
+n_bodies = 30  #bodies
 dim = 3  # (x,y) GLOBAL
 G = 6.674 * 10**-11
 
@@ -15,20 +15,16 @@ velocities = np.zeros([n_bodies,dim], dtype=np.float32)  # m/s x,y for each of n
 
 ###initialize with psuedo random values ##need to research approx astronomical distributions, suns, planets, etc.
 pos_array   =   np.random.normal(100,10,[n_bodies,dim])             #, dtype=np.float64) # position relative in meters, x,y,z to arbitrary origin for each of n bodies
-#velocities  =   np.random.normal(100,10,[n_bodies,dim])             #, dtype=np.float64)  # m/s x,y for each of n bodies
+# velocities  =   np.random.normal(100,10,[n_bodies,dim])             #, dtype=np.float64)  # m/s x,y for each of n bodies
 mass_array  =   100* np.random.normal(100,10,[n_bodies])        #, dtype=np.float32)  # masses for each of n bodies, in kg
 
 
 ########FUNCTIONS##########
 
 def distances(obj_index, positions):
-    """computes geometric distance from selected object to all other objects"""
-    n = len(positions)
-    out = np.zeros([n])
-    for index, each in enumerate(positions):
-        out[index] = np.linalg.norm(positions[obj_index]-each)   #### de for loop with axis = 1 option
-        #  print(out)
-    return(out)
+    """computes geometric distance from selected object to all other objects inc. self (which == 0)"""
+    out = np.linalg.norm(positions[obj_index] - positions, axis = 1)
+    return out
 
 def forces(obj_index, positions, masses):  #######DEBUG ME error line 36
     """returns force in Newtons for each object to each other object, no direction information"""
@@ -79,13 +75,18 @@ def continuous(velocities, positions, masses, interval, steps, time_slice = 0.1)
     for _ in range(steps):
         [velocities, positions] = discrete_simulation(velocities, positions, masses, time_slice, interval)
         out[(steps*interval)] = velocities,positions
-    return(out)
+    return out
 
     #  print(force_list)
 ### Testing ###
 # pos_array[2,1]=1.876
 # pos_array[0,2]=5.867546546
 # pos_array[4,0]=4.3
+
+
+# a = distances(0,pos_array)
+# print(a)
+
 
 c = continuous(velocities, pos_array, mass_array,10,1000,time_slice=0.1)
 
@@ -95,3 +96,6 @@ print(end - start)
 
 print(c)
 
+#####Need data storage, need plotting
+##### need to simulate known system, eg earth around sun, moon around earth.
+##### want to try pypy
