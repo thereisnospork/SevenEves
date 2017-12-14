@@ -1,8 +1,8 @@
 import numpy as np
-from timeit import default_timer as timer
+import os
 
 ###global gravity constant###
-G = 6.674 * 10**-11
+G = 6.674 #  * 10**-11
 
 
 ########FUNCTIONS##########
@@ -45,29 +45,37 @@ def delta_VP(velocities, positions, masses, time_slice):
     and Positions updated according to time_slice in seconds"""
     for index, _ in enumerate(positions):  #better way to access index?
         force_v = net_force_vector(index,positions,masses)
-        velocities[index] += force_v * time_slice / mass_array[index]        ##delta impulse /mass = delta velocity + orig = new velocity, ammended to input
-    positions += positions * velocities * time_slice ### pos * velocity * time = delta positionprobably needs a math/python debugging
+
+        velocities[index] = velocities[index] + force_v * time_slice / masses[index]        ##delta impulse /mass = delta velocity + orig = new velocity, ammended to input
+
+
+    positions += velocities * time_slice ### pos * velocity * time = delta position
     return [velocities,positions]
 
 def discrete_simulation(velocities, positions, masses, time_slice = 0.1, time_max = 100):
     """returns new velocity, positions after iterating at a delta_time of time_slice
     until time_max is reached.  Interval states are discarded"""
-    steps = int(time_max//time_slice)
+    steps = int(time_max/time_slice)
     for _ in range(steps):
         [velocities, positions] = delta_VP(velocities,positions,masses,time_slice)
     return [velocities, positions]
 
-def continuous(velocities, positions, masses, interval, steps, serial = 0, time_slice = 0.1):
+def continuous(velocities, positions, masses, interval, steps, serial, time_slice = 0.1):
     """Calls discrete simulation n = steps of time interval length with time_slice resolution.
     Stores and outputs a csv V/P arrays hstackd indexed by step #"""
     for step in range(steps):
         [velocities, positions] = discrete_simulation(velocities, positions, masses, time_slice, interval)
 
-        save_state([masses, velocities, positions],step*interval, serial = serial)
+        save_state([masses[:,None], velocities, positions],step*interval, serial)
 
-def save_state(M_V_P, time, serial = 0):
+def save_state(M_V_P, time, serial):
     combined = np.hstack(M_V_P)
-    file_name = str('data\\system_'+str(serial) +'\\time_' + str(time) +'.csv')
+    folder_path = str('data\\system_'+str(serial))
+
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+
+    file_name = folder_path + str('\\time_' + str(time) +'.csv')
     np.savetxt(file_name, combined, delimiter=',', header = str(time))
 
 
