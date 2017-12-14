@@ -23,8 +23,7 @@ mass_array  =   100* np.random.normal(100,10,[n_bodies])        #, dtype=np.floa
 
 def distances(obj_index, positions):
     """computes geometric distance from selected object to all other objects inc. self (which == 0)"""
-    out = np.linalg.norm(positions[obj_index] - positions, axis = 1)
-    return out
+    return np.linalg.norm(positions[obj_index] - positions, axis = 1)
 
 def forces(obj_index, positions, masses):  #######DEBUG ME error line 36
     """returns force in Newtons for each object to each other object, no direction information"""
@@ -65,17 +64,26 @@ def delta_VP(velocities, positions, masses, time_slice):
     return [velocities,positions]
 
 def discrete_simulation(velocities, positions, masses, time_slice = 0.1, time_max = 100):
+    """returns new velocity, positions after iterating at a delta_time of time_slice
+    until time_max is reached.  Interval states are discarded"""
     steps = int(time_max//time_slice)
     for _ in range(steps):
         [velocities, positions] = delta_VP(velocities,positions,masses,time_slice)
     return [velocities, positions]
 
 def continuous(velocities, positions, masses, interval, steps, time_slice = 0.1):
-    out = dict()
-    for _ in range(steps):
+    """Calls discrete simulation n = steps of time interval length with time_slice resolution.
+    Stores and outputs a csv V/P arrays hstackd indexed by step #"""
+    for step in range(steps):
         [velocities, positions] = discrete_simulation(velocities, positions, masses, time_slice, interval)
-        out[(steps*interval)] = velocities,positions
-    return out
+        save_state([velocities, positions],step*interval)
+
+def save_state(V_P, time):
+    combined = np.hstack(V_P)
+    file_name = str('data\\' + str(time) +' delete_me.csv')
+    np.savetxt( file_name, combined, delimiter=',')
+
+
 
     #  print(force_list)
 ### Testing ###
@@ -88,7 +96,7 @@ def continuous(velocities, positions, masses, interval, steps, time_slice = 0.1)
 # print(a)
 
 
-c = continuous(velocities, pos_array, mass_array,10,1000,time_slice=0.1)
+c = continuous(velocities, pos_array, mass_array,10,100,time_slice=0.1)
 
 end = timer()
 
