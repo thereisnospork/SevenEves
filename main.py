@@ -22,10 +22,10 @@ def forces(obj_index, positions, masses):  #######DEBUG ME error line 36
 def unit_vectors(obj_index, positions):
     """returns unit vector for obj to each other object"""
     un_normed = positions - positions[obj_index]
-    norming = np.sum(np.absolute(un_normed), axis=1) ** -1  #abs values of array for suming
+    norming = np.linalg.norm(un_normed, axis=1) ** -1  #abs values of array for suming
     normed = norming * np.transpose(un_normed)
     normed = normed.transpose()
-    return normed
+    return normed   ######dbl check math on normalization
 
 def net_force_vector(obj_index, positions, masses):
     """computes x,y,z force vector, in Newtons, for given object index"""
@@ -64,9 +64,10 @@ def continuous(velocities, positions, masses, interval, steps, serial, time_slic
     """Calls discrete simulation n = steps of time interval length with time_slice resolution.
     Stores and outputs a csv V/P arrays hstackd indexed by step #"""
     for step in range(steps):
+        save_state([masses[:,None], velocities, positions],step*interval, serial)
+
         [velocities, positions] = discrete_simulation(velocities, positions, masses, time_slice, interval)
 
-        save_state([masses[:,None], velocities, positions],step*interval, serial)
 
 def save_state(M_V_P, time, serial):
     combined = np.hstack(M_V_P)
