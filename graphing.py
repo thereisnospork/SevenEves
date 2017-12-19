@@ -11,9 +11,11 @@ def files_to_times(files):
     return times
 
 def files_to_MVP(files):
+    """pulls all the files in the directory into one large cubic numpy array"""
     body_count = num_bodies(files)
     master = np.zeros((body_count,7,len(files))) ##ROW | COLS | TIME
-    master[:,:,0] = np.genfromtxt('data\\'+system +'\\'+ files[0], delimiter=',')
+    for index, file in enumerate(files):
+        master[:,:,index] = np.genfromtxt('data\\'+system +'\\'+ file, delimiter=',')
     return master
 
 def num_bodies(files):
