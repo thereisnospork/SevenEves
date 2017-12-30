@@ -1,8 +1,11 @@
-import matplotlib as mpl
-import bokeh as bh
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
 import numpy as np
 import os
 
+system = 'system_0'
+directory = 'data\\'+system +'\\'
+data_files = os.listdir(directory)
 
 def files_to_times(files):
     times = list()
@@ -10,17 +13,17 @@ def files_to_times(files):
         times.append(int(title.split('.')[0].split('_')[1]))
     return times
 
-def files_to_MVP(files):
+def files_to_MVP(files, directory):
     """pulls all the files in the directory into one large cubic numpy array"""
-    body_count = num_bodies(files)
+    body_count = num_bodies(files, directory)
     master = np.zeros((body_count,7,len(files))) ##ROW | COLS | TIME
     for index, file in enumerate(files):
-        master[:,:,index] = np.genfromtxt('data\\'+system +'\\'+ file, delimiter=',')
+        master[:,:,index] = np.genfromtxt(directory + file, delimiter=',')
     return master
 
-def num_bodies(files):
-    a = np.genfromtxt('data\\'+system +'\\'+ files[0])
-    return(len(a))
+def num_bodies(files, directory):
+    a = np.genfromtxt(directory + files[0])
+    return len(a)
 
 def masses(MVP):
     return MVP[:,1,:]
@@ -31,14 +34,74 @@ def velocities(MVP):
 def positions(MVP):
     return MVP[:,4:8,:]
 
+def graph_pos(system,init=False, end = False):
+    directory = 'data\\' + system + '\\'
+    data_files = os.listdir(directory)
+    mvp = files_to_MVP(data_files, directory)
+    # times = files_to_times(data_files)
+    m = masses(mvp)
+    # v = velocities(mvp)
+    p = positions(mvp)
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection = '3d')
+
+    if init:
+        p_x, p_y, p_z = p[:,0,0], p[:,1,0], p[:,2,0] # graphs initial positions
+    elif end:
+        p_x, p_y, p_z = p[:,0,0], p[:,1,-1], p[:,2,-1] # graphs initial positions
+    else:
+        p_x, p_y, p_z = p[:,0], p[:,1], p[:,2] # graphs trace of position over time (no t coloration/axis)
+
+    ax.scatter(p_x, p_y, p_z, c=m.flatten(), marker='o')
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    ax.set_title(system+'_pos')
+    #
+    # print(np.ndim(p))
+    # print(p[:,0,0])
+    # print(p[:,1,0])
+
+    #p[0,,] is [x,y,z]'s for one body
+    plt.show()
+
+def graph_vel(system,init=False, end = False):
+    directory = 'data\\' + system + '\\'
+    data_files = os.listdir(directory)
+    mvp = files_to_MVP(data_files, directory)
+    # times = files_to_times(data_files)
+    m = masses(mvp)
+    v = velocities(mvp)
+    # p = positions(mvp)
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection = '3d')
+
+    if init:
+        v_x, v_y, v_z = v[:,0,0], v[:,1,0], v[:,2,0] # graphs initial positions
+    elif end:
+        v_x, v_y, v_z = v[:,0,0], v[:,1,-1], v[:,2,-1] # graphs initial positions
+    else:
+        v_x, v_y, v_z = v[:,0], v[:,1], v[:,2] # graphs trace of position over time (no t coloration/axis)
+
+    ax.scatter(v_x, v_y, v_z, c=m.flatten(), marker='o')
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    ax.set_title(system+'_vel')
+
+    plt.show()
+
+
+
+graph_pos('system_75')
+graph_vel('system_75')
 
 
 
 
-system = 'system_0'
-data_files = os.listdir('data\\'+ system+'\\')
 
-foo = files_to_times(data_files)
-bar = num_bodies(data_files)
-asdf = files_to_MVP(data_files)
-print(asdf[:,4:8,0])
+# foo = files_to_times(data_files)
+# bar = num_bodies(data_files,directory)
+# asdf = files_to_MVP(data_files,directory)
+# qwert = positions(asdf)
+# print(qwert)
