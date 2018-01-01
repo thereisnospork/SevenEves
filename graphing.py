@@ -82,12 +82,18 @@ def graph_vel(system,init=False, end = False):
 
     if init:
         v_x, v_y, v_z = v[:,0,0], v[:,1,0], v[:,2,0] # graphs initial positions
+        col = m[:,0].flatten()
+
     elif end:
         v_x, v_y, v_z = v[:,0,0], v[:,1,-1], v[:,2,-1] # graphs initial positions
+        col = m[:,0].flatten()
+
     else:
         v_x, v_y, v_z = v[:,0], v[:,1], v[:,2] # graphs trace of position over time (no t coloration/axis)
+        col = m.flatten()
 
-    ax.scatter(v_x, v_y, v_z, c=m.flatten(), marker='o')
+
+    ax.scatter(v_x, v_y, v_z, c=col, marker='o')
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
