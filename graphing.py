@@ -23,6 +23,7 @@ def files_to_MVP(files, directory):
 
 def num_bodies(files, directory):
     a = np.genfromtxt(directory + files[0])
+    print(len(a))
     return len(a)
 
 def masses(MVP):
@@ -47,12 +48,15 @@ def graph_pos(system,init=False, end = False):
 
     if init:
         p_x, p_y, p_z = p[:,0,0], p[:,1,0], p[:,2,0] # graphs initial positions
+        col = m[:,0].flatten()
     elif end:
-        p_x, p_y, p_z = p[:,0,0], p[:,1,-1], p[:,2,-1] # graphs initial positions
+        p_x, p_y, p_z = p[:,0,0], p[:,1,-1], p[:,2,-1] # graphs final positions
+        col = m[:,0].flatten()
     else:
         p_x, p_y, p_z = p[:,0], p[:,1], p[:,2] # graphs trace of position over time (no t coloration/axis)
+        col = m.flatten()
 
-    ax.scatter(p_x, p_y, p_z, c=m.flatten(), marker='o')
+    ax.scatter(p_x, p_y, p_z, c=col, marker='o')
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
@@ -88,13 +92,13 @@ def graph_vel(system,init=False, end = False):
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
     ax.set_title(system+'_vel')
-
+    print(v)
     plt.show()
 
 
 
-graph_pos('system_75')
-graph_vel('system_75')
+graph_pos('system_0', init=True)
+graph_vel('system_0')
 
 
 

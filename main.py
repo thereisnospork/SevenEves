@@ -9,12 +9,16 @@ G = 6.674 #  * 10**-11
 
 def distances(obj_index, positions):
     """computes geometric distance from selected object to all other objects inc. self (which == 0)"""
+    # print(np.linalg.norm(positions[obj_index] - positions, axis = 1))
     return np.linalg.norm(positions[obj_index] - positions, axis = 1)
 
-def forces(obj_index, positions, masses):  #######DEBUG ME error line 36
+def forces(obj_index, positions, masses):  #######improve efficiency by slicing out self? instead of dropping 0?
     """returns force in Newtons for each object to each other object, no direction information"""
     dists = distances(obj_index, positions)     #calcs distances for given object, by index
     force_list = G*masses[obj_index]*masses / (dists**2) #Vector of G of mass times masses, including self, unit divided by dist ^2
+
+    # force_list = -G / (dists**3)
+
     #force_list = np.multiply(force_num,dists**-2)
     force_list[obj_index]=0  # removes division by 0 caused by 0-dist to self in above line
     return force_list
@@ -45,19 +49,19 @@ def delta_VP(velocities, positions, masses, time_slice):
     and Positions updated according to time_slice in seconds"""
     for index, _ in enumerate(positions):  #better way to access index?
         force_v = net_force_vector(index,positions,masses)
-
-        velocities[index] = velocities[index] + force_v * time_slice / masses[index]        ##delta impulse /mass = delta velocity + orig = new velocity, ammended to input
-
-
+        velocities[index] = velocities[index] + (force_v * time_slice / masses[index])   ##delta impulse /mass = delta velocity + orig = new velocity, ammended to input
     positions += velocities * time_slice ### pos * velocity * time = delta position
     return [velocities,positions]
 
-def discrete_simulation(velocities, positions, masses, time_slice = 0.1, time_max = 100):
+def discrete_simulation(velocities, positions, masses, time_slice = .0001, time_max = 50, verbose = False):
     """returns new velocity, positions after iterating at a delta_time of time_slice
     until time_max is reached.  Interval states are discarded"""
     steps = int(time_max/time_slice)
     for _ in range(steps):
         [velocities, positions] = delta_VP(velocities,positions,masses,time_slice)
+        if verbose:
+            # print(str(positions) + 'positions')
+            print(str(velocities)+ 'vel')
     return [velocities, positions]
 
 def continuous(velocities, positions, masses, interval, steps, serial, time_slice = 0.1):
