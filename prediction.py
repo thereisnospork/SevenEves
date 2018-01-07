@@ -9,7 +9,7 @@ start = timer()
 
 
 
-directory = 'sub_data\\'
+directory = 'data_short\\'
 sys_names = os.listdir(directory)
 directories = (directory + x + '\\' for x in sys_names)
 
@@ -64,7 +64,7 @@ with tf.name_scope('cross_entropy'):
     tf.summary.scalar('cross_entropy', cross_entropy)
 
 with tf.name_scope('train'):
-    train_step = 0#tf.train.RMSPropOptimizer(0.25, momentum = 0.5).minimize(cross_entropy)
+    train_step = tf.train.RMSPropOptimizer(0.25, momentum = 0.5).minimize(cross_entropy)
 
 
 if True: #do_training == 1:
@@ -77,7 +77,10 @@ if True: #do_training == 1:
             # print(outs[0])
             print(i)
             train_error = cross_entropy.eval(feed_dict={x: ins, y_: outs})
-            print('step %d, training error %g') % (i, train_error)
+            print(i)
+            print(train_error)
+
+            print('step %d, training error %g' % (i, train_error))
             # if train_error < 0.0005:
             #     break
 #
@@ -85,9 +88,9 @@ if True: #do_training == 1:
 #         #     s = sess.run(merged_summary, feed_dict={x:ins[i], y_: outs[i]})
 #         #     writer.add_summary(s, i)
 #
-#         sess.run(train_step, feed_dict={x: ins, y_: outs})
+        sess.run(train_step, feed_dict={x: ins, y_: outs})
 #
-#         print('Test error using test data %g except not really right now' % (cross_entropy.eval(feed_dict={x:outs, y_:outs})))
+        print('Test error using test data %g except not really right now' % (cross_entropy.eval(feed_dict={x:outs, y_:outs})))
 #
 #
 #
