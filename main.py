@@ -2,7 +2,7 @@ import numpy as np
 import os
 
 ###global gravity constant###
-G = 6.674 #  * 10**-11
+G = 6.674   * 10**-11
 
 
 ########FUNCTIONS##########
@@ -15,8 +15,8 @@ def distances(obj_index, positions):
 def forces(obj_index, positions, masses):  #######improve efficiency by slicing out self? instead of dropping 0?
     """returns force in Newtons for each object to each other object, no direction information"""
     dists = distances(obj_index, positions)     #calcs distances for given object, by index
-    force_list = G*masses[obj_index]*masses / (dists**2) #Vector of G of mass times masses, including self, unit divided by dist ^2
-
+    force_list = G*masses[obj_index]*masses / dists #(dists**2) #Vector of G of mass times masses, including self, unit divided by dist ^2
+    # print(force_list)
     # force_list = -G / (dists**3)
 
     #force_list = np.multiply(force_num,dists**-2)

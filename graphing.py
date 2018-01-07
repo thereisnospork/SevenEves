@@ -45,6 +45,7 @@ def VP_results(MVP):
 def MVP_start(MVP):
     return MVP[:,:,0]
 
+
 def graph_pos(system,init=False, end = False):
     directory = 'data\\' + system + '\\'
     mvp = files_to_MVP(directory)
@@ -111,9 +112,9 @@ def graph_vel(system,init=False, end = False):
     plt.show()
 
 
-
-# graph_pos('system_0')
-# graph_vel('system_0')
+#
+# graph_pos('system_100')
+# graph_vel('system_100')
 #
 
 
