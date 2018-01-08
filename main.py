@@ -84,7 +84,7 @@ def continuous_2(velocities, positions, masses, interval, steps, serial, time_sl
         out_arr[:,:,step] = MVP
         [velocities, positions] = discrete_simulation(velocities, positions, masses, time_slice, interval)
 
-    file_name = folder + 'system_'+ str(serial)+ '_int_' + str(interval)+'_slice_'+str(time_slice)+ '.npz'
+    file_name = folder + 'system_'+ str(serial)+ '_int_' + str(interval)+'_slice_'+str(time_slice)+ '.npy'
     np.save(file_name,out_arr, allow_pickle=False) ###only python 3 compatible, breaks PyPy
 
 
