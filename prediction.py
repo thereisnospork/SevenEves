@@ -10,12 +10,11 @@ start = timer()
 
 
 directory = 'data_short\\'
-sys_names = os.listdir(directory)
-directories = (directory + x + '\\' for x in sys_names)
-
+files = os.listdir(directory)
+print(files)
 ###Reading from disc and slicing into start conditions and output VPs
-outs = [graph.files_to_MVP(directory) for directory in directories]
-ins = [graph.MVP_start(MVP) for MVP in outs]
+outs = [np.fromfile(file_) for file_ in files]
+ins = [out[:,:,0] for out in outs]
 
 for i, each in enumerate(ins):
     ins[i] = np.dstack([ins[i]]*len(outs[0][0,0,:])) # extends initial conditions along 3rd axis equal to number of time points
@@ -49,8 +48,11 @@ x = tf.placeholder(tf.float32, shape = [None, num_points]) #[None,num_bodies,num
 y_ = tf.placeholder(tf.float32, shape =[None, num_points]) #num_bodies,num_cols,num_points], name = 'y_')
 
 
-layer1=tf.layers.dense(x, num_points, tf.nn.relu)
+layer1 = tf.layers.dense(x, num_points*2, tf.nn.relu)
 y = tf.layers.dense(layer1, num_points, tf.nn.relu)
+# layer3 = tf.layers.dense(layer2, num_points, tf.nn.relu)
+# layer4 = tf.layers.dense(layer3, num_points, tf.nn.relu)
+# y = tf.layers.dense(layer2, num_points, tf.nn.relu)
 
 print(y)
 print(layer1)
@@ -58,29 +60,30 @@ print(layer1)
 
 
 with tf.name_scope('cross_entropy'):
-    cross_entropy = tf.reduce_mean(
-        tf.nn.sigmoid_cross_entropy_with_logits(logits = y, labels = y_)
-    )
+    # cross_entropy = tf.nn.l2_loss(y_-y)
+    cross_entropy = tf.losses.huber_loss(labels = y_, predictions = y)
+
+
+    # cross_entropy = tf.reduce_mean(
+    #     abs(tf.nn.sigmoid_cross_entropy_with_logits(logits = y, labels = y_))
+    # )
     tf.summary.scalar('cross_entropy', cross_entropy)
 
 with tf.name_scope('train'):
-    train_step = tf.train.RMSPropOptimizer(0.25, momentum = 0.5).minimize(cross_entropy)
+    train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
 
 
-if True: #do_training == 1:
+if False: #do_training == 1:
     sess.run(tf.global_variables_initializer())
 
-    for i in range(11): #10001
+    for i in range(1001): #10001
         if i % 1 == 0: #batch size
-            # print(ins)
-            # print(ins[0])
-            # print(outs[0])
-            print(i)
-            train_error = cross_entropy.eval(feed_dict={x: ins, y_: outs})
-            print(i)
-            print(train_error)
+            loop_start = timer()
 
-            print('step %d, training error %g' % (i, train_error))
+            train_error = cross_entropy.eval(feed_dict={x: ins, y_: outs})
+            loop_end = timer()
+            delta_t = loop_end - loop_start
+            print('step %d, training error %g in #s' % (i, train_error, delta_t))
             # if train_error < 0.0005:
             #     break
 #
@@ -90,7 +93,7 @@ if True: #do_training == 1:
 #
         sess.run(train_step, feed_dict={x: ins, y_: outs})
 #
-        print('Test error using test data %g except not really right now' % (cross_entropy.eval(feed_dict={x:outs, y_:outs})))
+        print('Test error using test data %g' % (cross_entropy.eval(feed_dict={x:outs, y_:outs})))
 #
 #
 #

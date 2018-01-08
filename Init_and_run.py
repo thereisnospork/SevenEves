@@ -45,14 +45,14 @@ def init_gaus(interval, years, iterations,serial_num = 0, time_slice=0.1, n_bodi
         # pos_array = 10**5 * pos_array
 
 
-        main.continuous(velocities,pos_array,mass_array,interval,steps,serial_num, time_slice)
+        main.continuous_2(velocities,pos_array,mass_array,interval,steps,serial_num, time_slice)
         serial_num += 1
 
         end = timer()
         print(str(end-start) + 's elapsed this loop')
 
 
-init_gaus(3600, .1, 99, time_slice=1, serial_num = 3000, dim = 3, n_bodies=5)
+init_gaus(3600, .1, 99, time_slice=1, serial_num = 30005, dim = 3, n_bodies=5)
 
 
 

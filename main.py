@@ -64,18 +64,33 @@ def discrete_simulation(velocities, positions, masses, time_slice = .0001, time_
             print(str(velocities)+ 'vel')
     return [velocities, positions]
 
-def continuous(velocities, positions, masses, interval, steps, serial, time_slice = 0.1):
+def continuous_csv(velocities, positions, masses, interval, steps, serial, time_slice = 0.1, folder = 'data\\system_'):
     """Calls discrete simulation n = steps of time interval length with time_slice resolution.
     Stores and outputs a csv V/P arrays hstackd indexed by step #"""
     for step in range(steps):
-        save_state([masses[:,None], velocities, positions],step*interval, serial)
+        save_state([masses[:,None], velocities, positions],step*interval, serial, folder)
 
         [velocities, positions] = discrete_simulation(velocities, positions, masses, time_slice, interval)
 
+def continuous_2(velocities, positions, masses, interval, steps, serial, time_slice = 0.1, folder = 'data/'):
+    """Calls discrete simulation n = steps of time interval length with time_slice resolution.
+    Stores and outputs a binary npy of stacked timestates"""
 
-def save_state(M_V_P, time, serial):
+    shape = [len(masses[:,None]), len(masses[None,:])+ len(velocities[0,:])+ len(positions[0,:]), steps]
+    out_arr = np.zeros(shape) #sets up single array, MVP (col, row) x time stamp (depth)
+    for step in range(steps):
+
+        MVP = np.hstack([masses[:,None], velocities, positions])
+        out_arr[:,:,step] = MVP
+        [velocities, positions] = discrete_simulation(velocities, positions, masses, time_slice, interval)
+
+    file_name = folder + 'system_'+ str(serial)+ '_int_' + str(interval)+'_slice_'+str(time_slice)+ '.npz'
+    np.save(file_name,out_arr, allow_pickle=False) ###only python 3 compatible, breaks PyPy
+
+
+def save_state(M_V_P, time, serial, folder = 'data\\system_' ):
     combined = np.hstack(M_V_P)
-    folder_path = str('data\\system_'+str(serial))
+    folder_path = str(folder+str(serial))
 
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
