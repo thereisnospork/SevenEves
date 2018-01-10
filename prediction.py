@@ -7,34 +7,42 @@ from timeit import default_timer as timer
 ###First import data, graph has some functions
 start = timer()
 
+def ins_outs(directory):
+    """reads .npy files from directory into (ins,outs) tuple of two lists of 1-d np arrays
+    each consisting of one full system that has been flattened.  The ins are system t0's
+    expanded to match the dimensionality of the outs"""
+    files = os.listdir(directory)
+    outs = [np.load(directory + file_) for file_ in files]
+    ins = [out[:, :, 0] for out in outs]
 
+    for i, each in enumerate(ins):
+        ins[i] = np.dstack([ins[i]] * len(outs[0][0, 0, :]))  # extends initial conditions along 3rd axis equal to number of time points
+        ins[i] = ins[i].flatten()
 
-directory = 'data_short\\'
-files = os.listdir(directory)
-print(files)
-###Reading from disc and slicing into start conditions and output VPs
-outs = [np.fromfile(file_) for file_ in files]
-ins = [out[:,:,0] for out in outs]
+    for i, each in enumerate(outs):
+        outs[i] = outs[i].flatten()
 
-for i, each in enumerate(ins):
-    ins[i] = np.dstack([ins[i]]*len(outs[0][0,0,:])) # extends initial conditions along 3rd axis equal to number of time points
-    ins[i]=ins[i].flatten()
+    return (ins, outs)
 
-for i, each in enumerate(outs):
-    outs[i]=outs[i].flatten()
+directory = 'new_single_data\\'
+directory_test = 'new_test_data\\'
 
+ins,outs = ins_outs(directory)
+ins_test,outs_test = ins_outs(directory_test)
 
+# ins_test = np.ones([1,30660])#test value for seperate test/training error
+# outs_test = np.ones([1,30660])
 
-
-# print(len(outs[0]))
-# print(len(ins[0]))
-#
-#
 
 num_bodies = 5
-num_sys_in = len(ins)
-num_points = len(ins[0])
+num_sys = len(outs)
+num_in = len(ins[0])
+num_points = len(outs[0])
+
 # num_cols = 7  ###len(a[0][0,:,0]
+
+print(num_in)
+print(num_points)
 
 # ####assemble feed dict up here!!!!!!!!
 
@@ -48,11 +56,14 @@ x = tf.placeholder(tf.float32, shape = [None, num_points]) #[None,num_bodies,num
 y_ = tf.placeholder(tf.float32, shape =[None, num_points]) #num_bodies,num_cols,num_points], name = 'y_')
 
 
-layer1 = tf.layers.dense(x, num_points*2, tf.nn.relu)
+
+layer1 = tf.layers.dense(x, num_points, tf.nn.relu)
 y = tf.layers.dense(layer1, num_points, tf.nn.relu)
-# layer3 = tf.layers.dense(layer2, num_points, tf.nn.relu)
+
+# y = tf.layers.dense(layer2, num_points, tf.nn.relu)
 # layer4 = tf.layers.dense(layer3, num_points, tf.nn.relu)
 # y = tf.layers.dense(layer2, num_points, tf.nn.relu)
+
 
 print(y)
 print(layer1)
@@ -61,7 +72,11 @@ print(layer1)
 
 with tf.name_scope('cross_entropy'):
     # cross_entropy = tf.nn.l2_loss(y_-y)
-    cross_entropy = tf.losses.huber_loss(labels = y_, predictions = y)
+    # cross_entropy = tf.losses.huber_loss(labels = y_, predictions = y)
+    cross_entropy = tf.losses.absolute_difference(labels = y_, predictions = y)
+    # cross_entropy = tf.reduce_sum(abs(y_-y))
+
+    sum_ = tf.reduce_sum(y_)/num_sys
 
 
     # cross_entropy = tf.reduce_mean(
@@ -73,27 +88,52 @@ with tf.name_scope('train'):
     train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
 
 
-if False: #do_training == 1:
+if True: #do_training == 1:
     sess.run(tf.global_variables_initializer())
 
-    for i in range(1001): #10001
+    for i in range(7): #10001
+        loop_start = timer()
+
         if i % 1 == 0: #batch size
-            loop_start = timer()
 
             train_error = cross_entropy.eval(feed_dict={x: ins, y_: outs})
-            loop_end = timer()
-            delta_t = loop_end - loop_start
-            print('step %d, training error %g in #s' % (i, train_error, delta_t))
+            test_error = cross_entropy.eval(feed_dict={x: ins_test, y_: outs_test})
+            # print(str(sum_.eval(feed_dict ={y_: outs}))+'avg sum of single system')
+
+            print('step {0}, training error {1} in none-seconds'.format(i, train_error))
+            print('test error:{0}'.format(test_error))
             # if train_error < 0.0005:
             #     break
-#
+
+
+
+        loop_end = timer()
+        delta_t = loop_end - loop_start
+        print(str(delta_t)+'seconds')
 #         # if write_for_tensorboard == 1 and i % 5 == 0:
 #         #     s = sess.run(merged_summary, feed_dict={x:ins[i], y_: outs[i]})
 #         #     writer.add_summary(s, i)
 #
         sess.run(train_step, feed_dict={x: ins, y_: outs})
+
+    asdf = y.eval(feed_dict={x: ins_test})
+
+    print(type(asdf))
+    print(asdf.shape)
+    print(asdf.shape)
+
+
+
+
+
+
+
+
+
+
+
 #
-        print('Test error using test data %g' % (cross_entropy.eval(feed_dict={x:outs, y_:outs})))
+        # print('Test error using test data %g' % (cross_entropy.eval(feed_dict={x:ins, y_:outs})))
 #
 #
 #
