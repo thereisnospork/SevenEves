@@ -1,5 +1,5 @@
 import tensorflow as tf
-import graphing as graph
+# import graphing as graph
 import os
 import numpy as np
 from timeit import default_timer as timer
@@ -13,6 +13,7 @@ def ins_outs(directory):
     expanded to match the dimensionality of the outs"""
     files = os.listdir(directory)
     outs = [np.load(directory + file_) for file_ in files]
+    outs = [out[:,:,0:50] for out in outs] #limit to first 50 time stamps for expedited computation/memory req.
     ins = [out[:, :, 0] for out in outs]
 
     for i, each in enumerate(ins):
@@ -58,11 +59,24 @@ y_ = tf.placeholder(tf.float32, shape =[None, num_points]) #num_bodies,num_cols,
 
 
 layer1 = tf.layers.dense(x, num_points, tf.nn.relu)
-y = tf.layers.dense(layer1, num_points, tf.nn.relu)
+layer2 = tf.layers.dense(layer1, num_points, tf.nn.relu)
+layer3 = tf.layers.dense(layer2, num_points, tf.nn.relu)
+layer4 = tf.layers.dense(layer3, num_points, tf.nn.relu)
+layer5 = tf.layers.dense(layer4, num_points, tf.nn.relu)
+layer6 = tf.layers.dense(layer5, num_points, tf.nn.relu)
+layer7 = tf.layers.dense(layer5, num_points, tf.nn.relu)
+layer8 = tf.layers.dense(layer6, num_points, tf.nn.relu)
+layer9 = tf.layers.dense(layer7, num_points, tf.nn.relu)
+layer10 = tf.layers.dense(layer8, num_points, tf.nn.relu)
+layer11 = tf.layers.dense(layer9, num_points, tf.nn.relu)
+layer12 = tf.layers.dense(layer10, num_points, tf.nn.relu)
+layer13 = tf.layers.dense(layer11, num_points, tf.nn.relu)
+layer14 = tf.layers.dense(layer12, num_points, tf.nn.relu)
+layer15 = tf.layers.dense(layer13, num_points, tf.nn.relu)
+layer16 = tf.layers.dense(layer14, num_points, tf.nn.relu)
+layer17 = tf.layers.dense(layer15, num_points, tf.nn.relu)
+y = tf.layers.dense(layer16, num_points, tf.nn.relu)
 
-# y = tf.layers.dense(layer2, num_points, tf.nn.relu)
-# layer4 = tf.layers.dense(layer3, num_points, tf.nn.relu)
-# y = tf.layers.dense(layer2, num_points, tf.nn.relu)
 
 
 print(y)
@@ -71,9 +85,9 @@ print(layer1)
 
 
 with tf.name_scope('cross_entropy'):
-    # cross_entropy = tf.nn.l2_loss(y_-y)
-    # cross_entropy = tf.losses.huber_loss(labels = y_, predictions = y)
-    cross_entropy = tf.losses.absolute_difference(labels = y_, predictions = y)
+    # cross_entropy = tf.nn.l2_loss((y_-y)/100000)
+    cross_entropy = tf.losses.huber_loss(labels = y_, predictions = y)
+    # cross_entropy = tf.losses.absolute_difference(labels = y_, predictions = y)
     # cross_entropy = tf.reduce_sum(abs(y_-y))
 
     sum_ = tf.reduce_sum(y_)/num_sys
@@ -85,42 +99,57 @@ with tf.name_scope('cross_entropy'):
     tf.summary.scalar('cross_entropy', cross_entropy)
 
 with tf.name_scope('train'):
-    train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
+    # train_step = tf.train.GradientDescentOptimizer(.1).minimize(cross_entropy)
+    train_step = tf.train.AdamOptimizer().minimize(cross_entropy) #uses more memory> caching bad
+    # train_step = tf.train.AdadeltaOptimizer().minimize(cross_entropy)
 
+    # __init__(
+    #     learning_rate=0.001,
+    #     beta1=0.9,
+    #     beta2=0.999,
+    #     epsilon=1e-08,
+    #     use_locking=False,
+    #     name='Adam'
 
 if True: #do_training == 1:
     sess.run(tf.global_variables_initializer())
 
-    for i in range(7): #10001
+    for i in range(1000): #10001
         loop_start = timer()
 
-        if i % 1 == 0: #batch size
+        if i % 100 == 0: #batch size
 
             train_error = cross_entropy.eval(feed_dict={x: ins, y_: outs})
-            test_error = cross_entropy.eval(feed_dict={x: ins_test, y_: outs_test})
+            # test_error = cross_entropy.eval(feed_dict={x: ins_test, y_: outs_test})
             # print(str(sum_.eval(feed_dict ={y_: outs}))+'avg sum of single system')
 
             print('step {0}, training error {1} in none-seconds'.format(i, train_error))
-            print('test error:{0}'.format(test_error))
+            # print('test error:{0}'.format(test_error))
             # if train_error < 0.0005:
             #     break
 
 
 
-        loop_end = timer()
-        delta_t = loop_end - loop_start
-        print(str(delta_t)+'seconds')
+
 #         # if write_for_tensorboard == 1 and i % 5 == 0:
 #         #     s = sess.run(merged_summary, feed_dict={x:ins[i], y_: outs[i]})
 #         #     writer.add_summary(s, i)
 #
         sess.run(train_step, feed_dict={x: ins, y_: outs})
+        loop_end = timer()
 
-    asdf = y.eval(feed_dict={x: ins_test})
+        delta_t = loop_end - loop_start
+        print(str(delta_t)+'seconds')
 
-    print(type(asdf))
-    print(asdf.shape)
-    print(asdf.shape)
+    asdf = y.eval(feed_dict={x: np.reshape(ins_test[0],[1,1750])})
+    asdf = np.reshape(asdf,[5,7,50])
+    foo = np.reshape(ins_test[0],[5,7,50])
+    np.savetxt('out\\out_testing.csv',asdf[:,:,0])
+    np.savetxt('out\\out_testing2.csv',asdf[:,:,5])
+    np.savetxt('out\\in_testing.csv',foo[:,:,0])
+    # print(type(asdf))
+    # print(asdf.shape)
+    # print(np.reshape(asdf,[5,7,876]))
 
 
 
