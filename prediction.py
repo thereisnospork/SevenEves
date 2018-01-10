@@ -10,10 +10,18 @@ start = timer()
 def ins_outs(directory):
     """reads .npy files from directory into (ins,outs) tuple of two lists of 1-d np arrays
     each consisting of one full system that has been flattened.  The ins are system t0's
-    expanded to match the dimensionality of the outs"""
+    expanded to match the dimensionality of the outs
+    Also normalizes along axis 1 (masses, Vx, Vy, etc. for each system and returns list of
+    norming arrays for data reconstitution"""
+
     files = os.listdir(directory)
     outs = [np.load(directory + file_) for file_ in files]
     outs = [out[:,:,0:50] for out in outs] #limit to first 50 time stamps for expedited computation/memory req.
+    for index, out in enumerate(outs):
+        norm = np.linalg.norm(out, axis = 0)
+        out[index] = out * norm**-1
+        norms.append(norm)
+
     ins = [out[:, :, 0] for out in outs]
 
     for i, each in enumerate(ins):
@@ -23,13 +31,13 @@ def ins_outs(directory):
     for i, each in enumerate(outs):
         outs[i] = outs[i].flatten()
 
-    return (ins, outs)
+    return ins, outs, norms
 
 directory = 'new_single_data\\'
 directory_test = 'new_test_data\\'
 
-ins,outs = ins_outs(directory)
-ins_test,outs_test = ins_outs(directory_test)
+ins,outs, norms = ins_outs(directory)
+ins_test,outs_test, norms_test = ins_outs(directory_test)
 
 # ins_test = np.ones([1,30660])#test value for seperate test/training error
 # outs_test = np.ones([1,30660])
@@ -85,8 +93,8 @@ print(layer1)
 
 
 with tf.name_scope('cross_entropy'):
-    # cross_entropy = tf.nn.l2_loss((y_-y)/100000)
-    cross_entropy = tf.losses.huber_loss(labels = y_, predictions = y)
+    cross_entropy = tf.nn.l2_loss(y_-y)
+    # cross_entropy = tf.losses.huber_loss(labels = y_, predictions = y)
     # cross_entropy = tf.losses.absolute_difference(labels = y_, predictions = y)
     # cross_entropy = tf.reduce_sum(abs(y_-y))
 
@@ -111,10 +119,10 @@ with tf.name_scope('train'):
     #     use_locking=False,
     #     name='Adam'
 
-if True: #do_training == 1:
+if False: #do_training == 1:
     sess.run(tf.global_variables_initializer())
 
-    for i in range(1000): #10001
+    for i in range(10): #10001
         loop_start = timer()
 
         if i % 100 == 0: #batch size

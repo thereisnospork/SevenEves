@@ -6,9 +6,7 @@ import os
 #####ONLY WORKS FOR 3D systems as written!!!!!!!!!!
 
 
-system = 'system_0'
-directory = 'data\\'+system +'\\'
-data_files = os.listdir(directory)
+
 
 def files_to_times(files):
     times = list()
@@ -111,7 +109,9 @@ def graph_vel(system,init=False, end = False):
     # print(v)
     plt.show()
 
-
+# system = 'system_0'
+# directory = 'data\\'+system +'\\'
+# data_files = os.listdir(directory)
 #
 # graph_pos('system_100')
 # graph_vel('system_100')
