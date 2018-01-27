@@ -3,10 +3,11 @@
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
       <excludeFolder url="file://$MODULE_DIR$/data" />
+      <excludeFolder url="file://$MODULE_DIR$/data_out" />
       <excludeFolder url="file://$MODULE_DIR$/data_short" />
       <excludeFolder url="file://$MODULE_DIR$/sub_data" />
     </content>
-    <orderEntry type="jdk" jdkName="PyPy 5.9.0 [Python 2.7.13] (C:\Users\georg\pypy2-v5.9.0-win32\pypy.exe)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.6 (SevenEves)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="TestRunnerService">

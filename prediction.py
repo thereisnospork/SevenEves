@@ -8,7 +8,7 @@ from timeit import default_timer as timer
 start = timer()
 
 def ins_outs(directory):
-    """reads .npy files from directory into (ins,outs) tuple of two lists of 1-d np arrays
+    """reads .npy files from directory into (ins,outs) tuple of two lists  of 1-d np arrays
     each consisting of one full system that has been flattened.  The ins are system t0's
     expanded to match the dimensionality of the outs
     Also normalizes along axis 1 (masses, Vx, Vy, etc. for each system and returns list of
@@ -17,10 +17,14 @@ def ins_outs(directory):
     files = os.listdir(directory)
     outs = [np.load(directory + file_) for file_ in files]
     outs = [out[:,:,0:50] for out in outs] #limit to first 50 time stamps for expedited computation/memory req.
+    outs = [out / np.linalg.norm(out, axis = 0, ord = 1) for out in outs]
+
+    norms=list()
+
     for index, out in enumerate(outs):
         norm = np.linalg.norm(out, axis = 0)
-        out[index] = out * norm**-1
         norms.append(norm)
+        out[np.isnan(out)] = 0  #scrub Nans from divide by 0
 
     ins = [out[:, :, 0] for out in outs]
 
@@ -31,13 +35,12 @@ def ins_outs(directory):
     for i, each in enumerate(outs):
         outs[i] = outs[i].flatten()
 
+    ins = np.array(ins)
+    outs = np.array(outs)
     return ins, outs, norms
 
-directory = 'new_single_data\\'
-directory_test = 'new_test_data\\'
-
-ins,outs, norms = ins_outs(directory)
-ins_test,outs_test, norms_test = ins_outs(directory_test)
+directory = 'data_out\\data2\\'
+ins, outs, norms = ins_outs(directory)
 
 # ins_test = np.ones([1,30660])#test value for seperate test/training error
 # outs_test = np.ones([1,30660])
@@ -53,12 +56,11 @@ num_points = len(outs[0])
 print(num_in)
 print(num_points)
 
-# ####assemble feed dict up here!!!!!!!!
-
+############        MODEL        ###############
 
 sess = tf.InteractiveSession()
 
-x = tf.placeholder
+# x = tf.placeholder
 
 
 x = tf.placeholder(tf.float32, shape = [None, num_points]) #[None,num_bodies,num_cols,num_points], name = 'x')  #[None, dimensions of tensor derived from starting conditions
@@ -83,22 +85,30 @@ layer14 = tf.layers.dense(layer12, num_points, tf.nn.relu)
 layer15 = tf.layers.dense(layer13, num_points, tf.nn.relu)
 layer16 = tf.layers.dense(layer14, num_points, tf.nn.relu)
 layer17 = tf.layers.dense(layer15, num_points, tf.nn.relu)
-y = tf.layers.dense(layer16, num_points, tf.nn.relu)
+y       = tf.layers.dense(layer16, num_points, tf.nn.relu)
+###replace masses in y with initial values manually here, by shape/reshape/replace/deshape
 
-
-
-print(y)
-print(layer1)
+# y = tf.reshape(y,[5,7,50]) #need to generalize for other dimensions!
+# x = tf.reshape(x,[5,7,50])
+#
+# weights = x[0,:,:] #similar to graph.masses()
+#
+# y = tf.stack([weights,y[1,:,:]], axis=1)
+#
+# print(tf.shape(weights))
+# print(tf.shape(y))
+# print(layer1)
+# print(y)
 
 
 
 with tf.name_scope('cross_entropy'):
-    cross_entropy = tf.nn.l2_loss(y_-y)
+    # cross_entropy = tf.nn.l2_loss(y_-y)
     # cross_entropy = tf.losses.huber_loss(labels = y_, predictions = y)
-    # cross_entropy = tf.losses.absolute_difference(labels = y_, predictions = y)
-    # cross_entropy = tf.reduce_sum(abs(y_-y))
+    cross_entropy = tf.losses.absolute_difference(labels = y_, predictions = y)
+    # cross_entropy = tf.reduce_sum(abs(y_-y)/num_sys)
 
-    sum_ = tf.reduce_sum(y_)/num_sys
+    # sum_ = tf.reduce_sum(y_)/num_sys
 
 
     # cross_entropy = tf.reduce_mean(
@@ -107,8 +117,8 @@ with tf.name_scope('cross_entropy'):
     tf.summary.scalar('cross_entropy', cross_entropy)
 
 with tf.name_scope('train'):
-    # train_step = tf.train.GradientDescentOptimizer(.1).minimize(cross_entropy)
-    train_step = tf.train.AdamOptimizer().minimize(cross_entropy) #uses more memory> caching bad
+    # train_step = tf.train.GradientDescentOptimizer(.5).minimize(cross_entropy)
+    train_step = tf.train.AdamOptimizer().minimize(cross_entropy) #uses more memory> caching bad with full t
     # train_step = tf.train.AdadeltaOptimizer().minimize(cross_entropy)
 
     # __init__(
@@ -119,46 +129,56 @@ with tf.name_scope('train'):
     #     use_locking=False,
     #     name='Adam'
 
-if False: #do_training == 1:
+
+if True: #do_training == 1:
+
+
     sess.run(tf.global_variables_initializer())
+    train_i = list(range(len(ins))) #first batch on whole system.  need to have a value here before called
 
-    for i in range(10): #10001
+    for i in range(200001): #10001
         loop_start = timer()
+        sess.run(train_step, feed_dict={x: ins[train_i], y_: outs[train_i]})
 
-        if i % 100 == 0: #batch size
+        if i % 500 == 0: #batch size
+            test_i = list()
+            train_i = list()
+            
+            for index, _ in enumerate(ins):
+                p = np.random.random()
+                if p > 0.6: #split train : test
+                    test_i.append(index)
+                else:
+                    train_i.append(index)
 
-            train_error = cross_entropy.eval(feed_dict={x: ins, y_: outs})
-            # test_error = cross_entropy.eval(feed_dict={x: ins_test, y_: outs_test})
+            train_error = cross_entropy.eval(feed_dict={x: ins[train_i], y_: outs[train_i]})
+            test_error = cross_entropy.eval(feed_dict={x: ins[test_i], y_: outs[test_i]})
             # print(str(sum_.eval(feed_dict ={y_: outs}))+'avg sum of single system')
 
-            print('step {0}, training error {1} in none-seconds'.format(i, train_error))
             # print('test error:{0}'.format(test_error))
             # if train_error < 0.0005:
             #     break
 
+            loop_end = timer()
+            delta_t = loop_end - loop_start
+            print('step {0}, training error {1}, test error {2} in {3}-seconds'.format(i, train_error, test_error, delta_t))
 
 
-
-#         # if write_for_tensorboard == 1 and i % 5 == 0:
-#         #     s = sess.run(merged_summary, feed_dict={x:ins[i], y_: outs[i]})
-#         #     writer.add_summary(s, i)
 #
-        sess.run(train_step, feed_dict={x: ins, y_: outs})
-        loop_end = timer()
 
-        delta_t = loop_end - loop_start
-        print(str(delta_t)+'seconds')
 
-    asdf = y.eval(feed_dict={x: np.reshape(ins_test[0],[1,1750])})
+    asdf = y.eval(feed_dict={x: np.reshape(ins[0],[1,1750])})
     asdf = np.reshape(asdf,[5,7,50])
-    foo = np.reshape(ins_test[0],[5,7,50])
+    foo = np.reshape(ins[0],[5,7,50])
     np.savetxt('out\\out_testing.csv',asdf[:,:,0])
-    np.savetxt('out\\out_testing2.csv',asdf[:,:,5])
+    np.savetxt('out\\out_testing5.csv',asdf[:,:,5])
     np.savetxt('out\\in_testing.csv',foo[:,:,0])
+    np.savetxt('out\\in_testing5.csv', foo[:, :, 5])
+    np.save('out\\full_diff.npy', (foo-asdf))
+    print('difference' + np.sum(abs(foo)-abs(asdf)))
     # print(type(asdf))
     # print(asdf.shape)
     # print(np.reshape(asdf,[5,7,876]))
-
 
 
 
@@ -293,5 +313,26 @@ if False: #do_training == 1:
 # # # print(y)
 # # #
 # # #
+
+#
+# def rand_dict_train_test(ins,outs, var_ind = x, var_dep = y_, p = 0.8):
+#     """creates 2 feed_dicts for TF eval, one to train and one to test.  p chance to be in test. rest to train.
+#     might add size limit later???
+#     possible issues if empty dict returned"""
+#     test_list = list()
+#     in_out = list(zip(ins,outs)) #fu python
+#     for index, each in enumerate(in_out):
+#         rnd = np.random.random()
+#         if rnd > p:
+#                 train_val = in_out.pop(index)
+#                 test_list.append(train_val)
+#     in_out = tuple(zip(*in_out))
+#     test_list = tuple(zip(*test_list))
+#
+#     train_dict = {var_ind:in_out[0], var_dep:in_out[1]}
+#     test_dict = {var_ind:test_list[0], test_list:in_out[1]}
+#
+#     return train_dict, test_dict
+
 end = timer()
 print(end-start)

@@ -1,10 +1,13 @@
 import numpy as np
 import main
 from timeit import default_timer as timer
+import sys
 
 ###Init test arrays (0's, 1's, etc.)
 
-def init_gaus(interval, years, iterations,serial_num = 0, time_slice=0.1, n_bodies = 3, dim = 3):
+def init_gaus(interval, years, iterations,serial_num = 0, time_slice=0.1, n_bodies = 3, dim = 3, label ='a'):
+    serial_num = int(serial_num)
+
 ###initialize with gaus values ##need to research approx astronomical distributions, suns, planets, etc.
     # n_bodies = 3  # bodies
     # dim = 3  # (x,y,z)
@@ -30,9 +33,9 @@ def init_gaus(interval, years, iterations,serial_num = 0, time_slice=0.1, n_bodi
         mass_array = mass_array *2000
 
 
-        print('initial conditions')
-        print(str(pos_array)+' pos')
-        print(str(velocities)+' velocities')
+        # print('initial conditions')
+        # print(str(pos_array)+' pos')
+        # print(str(velocities)+' velocities')
 
 
         pos_array.astype(np.float64)
@@ -43,15 +46,16 @@ def init_gaus(interval, years, iterations,serial_num = 0, time_slice=0.1, n_bodi
         # velocities = 5 * velocities
         # pos_array = 10**5 * pos_array
 
+        steps = 101
 
-        main.continuous_2(velocities,pos_array,mass_array,interval,steps,serial_num, time_slice, folder = 'data2/')
+        main.continuous_2(velocities,pos_array,mass_array,interval,steps, serial_num, time_slice, label, folder = 'data2/')
         serial_num += 1
 
         end = timer()
         print(str(end-start) + 's elapsed this loop')
 
 
-init_gaus(3600, .1, 99, time_slice=1, serial_num = 1, dim = 3, n_bodies=5)
+init_gaus(3600, .1, 10000, time_slice=1, serial_num = 0, label = str(sys.argv[1]), dim = 3, n_bodies=5)
 
-
+##TIME SLICE HARD CODED IN MAIN BECAUSE SNAFU
 
